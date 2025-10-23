@@ -2,7 +2,7 @@
 
 ## Quick start (dev)
 1. `docker compose up -d --build`
-2. Visit `http://localhost:8080`
+2. Visit `http://localhost:8083`
 3. Run tests: `docker run --rm -v "$PWD/app":/var/www/html -w /var/www/html php:8.2-cli bash -lc "composer install && ./vendor/bin/phpunit -v"`
 
 ## CI/CD
