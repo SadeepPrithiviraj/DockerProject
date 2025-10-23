@@ -1,16 +1,15 @@
 pipeline {
-  agent any
+  agent { label 'docker' }  // <-- run on a node that has docker CLI + daemon access
 
   options {
-    // prevent the implicit "Declarative: Checkout SCM"
-    skipDefaultCheckout(true)
+    skipDefaultCheckout(true) // avoid the implicit checkout
   }
 
   environment {
-    REGISTRY           = 'localhost:5000'
+    REGISTRY           = 'localhost:5000'        // change if your registry is on another host
     IMAGE_NAME         = 'docker-php-app'
-    DOCKER_CREDENTIALS = 'docker-registry'
-    GIT_CRED_ID        = 'github-https-pat'
+    DOCKER_CREDENTIALS = 'docker-registry'       // Jenkins Username/Password for your registry
+    GIT_CRED_ID        = 'github-https-pat'      // Jenkins Username/Password: username or x-access-token, password = PAT
   }
 
   stages {
@@ -24,8 +23,13 @@ pipeline {
 
     stage('Build') {
       steps {
-        sh 'docker --version || true'
-        sh 'docker build -t ${REGISTRY}/${IMAGE_NAME}:latest .'
+        sh '''
+          if ! command -v docker >/dev/null 2>&1; then
+            echo "ERROR: Docker CLI not installed/accessible on this node."
+            exit 2
+          fi
+          docker build -t ${REGISTRY}/${IMAGE_NAME}:latest .
+        '''
       }
     }
 
@@ -64,7 +68,7 @@ pipeline {
 
   post {
     always {
-      // Only prune if docker exists on the agent
+      // Only prune if docker exists on the node
       sh 'command -v docker >/dev/null 2>&1 && docker system prune -f || true'
     }
   }
