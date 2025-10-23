@@ -2,10 +2,10 @@ pipeline {
     agent any
 
     environment {
-        REGISTRY = 'your.private.registry:5000'
-        IMAGE_NAME = 'docker-php-app'
-        DOCKER_CREDENTIALS = 'docker-registry'
-    }
+    REGISTRY = 'localhost:5000'
+    IMAGE_NAME = 'docker-php-app'
+    DOCKER_CREDENTIALS = 'docker-registry'
+}
 
     stages {
         stage('Checkout') {
