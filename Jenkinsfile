@@ -5,7 +5,7 @@ pipeline {
         REGISTRY = 'your.private.registry:5000'
         IMAGE_NAME = 'docker-php-app'
         GIT_CREDENTIALS = 'github-token'
-        DOCKER_CREDENTIALS = 'registry-creds'
+        DOCKER_CREDENTIALS = 'docker-registry'
     }
 
     stages {
