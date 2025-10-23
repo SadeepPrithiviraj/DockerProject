@@ -1,67 +1,58 @@
 pipeline {
-  agent any
-  environment {
-    REGISTRY = "registry.example.com:443" // change to YOUR registry (omit :443 if default)
-    IMAGE_NAME = "${env.REGISTRY}/your-namespace/php-mysql-demo"
-    TAG = "${env.BUILD_NUMBER}"
-  }
-  stages {
-    stage('Checkout') {
-      steps {
-        checkout scm
-      }
+    agent any
+
+    environment {
+        REGISTRY = 'your.private.registry:5000'
+        IMAGE_NAME = 'docker-php-app'
+        GIT_CREDENTIALS = 'github-credentials'
+        DOCKER_CREDENTIALS = 'registry-creds'
     }
-    stage('Install & Test') {
-      steps {
-        dir('app') {
-          sh 'composer install --no-interaction'
-          sh './vendor/bin/phpunit -v || true' // continue even if tests are failing? Remove || true to fail pipeline on test failure.
+
+    stages {
+        stage('Checkout') {
+            steps {
+                git branch: 'main', credentialsId: "${GIT_CREDENTIALS}", url: 'git@github.com:SadeepPrithiviraj/DockerProject.git'
+            }
         }
-      }
-    }
-    stage('Build Image') {
-      steps {
-        sh """
-          docker build -t ${IMAGE_NAME}:${TAG} .
-          docker tag ${IMAGE_NAME}:${TAG} ${IMAGE_NAME}:latest
-        """
-      }
-    }
-    stage('Login to Registry') {
-      steps {
-        withCredentials([usernamePassword(credentialsId: 'docker-registry-credentials', usernameVariable: 'REG_USER', passwordVariable: 'REG_PASS')]) {
-          sh 'echo "$REG_PASS" | docker login ${REGISTRY} -u "$REG_USER" --password-stdin'
+
+        stage('Build') {
+            steps {
+                script {
+                    sh 'docker build -t $REGISTRY/$IMAGE_NAME:latest .'
+                }
+            }
         }
-      }
-    }
-    stage('Push Image') {
-      steps {
-        sh """
-          docker push ${IMAGE_NAME}:${TAG}
-          docker push ${IMAGE_NAME}:latest
-        """
-      }
-    }
-    stage('Deploy') {
-      steps {
-        // Use ssh deploy key credential to SSH into production host and update service
-        sshagent (credentials: ['ssh-deploy-key']) {
-          // Replace user@host and path to your docker-compose.prod.yml on remote host
-          sh """
-            ssh -o StrictHostKeyChecking=no deployuser@your.production.host '
-              cd /path/to/deployment &&
-              docker login ${REGISTRY} -u ${REG_USER} -p ${REG_PASS} &&
-              docker compose pull web &&
-              docker compose up -d --remove-orphans
-            '
-          """
+
+        stage('Test') {
+            steps {
+                script {
+                    sh 'docker run --rm $REGISTRY/$IMAGE_NAME:latest php -v'
+                }
+            }
         }
-      }
+
+        stage('Push') {
+            steps {
+                withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}", usernameVariable: 'USER', passwordVariable: 'PASS')]) {
+                    sh '''
+                    echo "$PASS" | docker login $REGISTRY -u "$USER" --password-stdin
+                    docker push $REGISTRY/$IMAGE_NAME:latest
+                    '''
+                }
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                script {
+                    sh '''
+                    docker stop php_app || true
+                    docker rm php_app || true
+                    docker pull $REGISTRY/$IMAGE_NAME:latest
+                    docker run -d --name php_app -p 8080:80 $REGISTRY/$IMAGE_NAME:latest
+                    '''
+                }
+            }
+        }
     }
-  }
-  post {
-    always {
-      sh 'docker logout ${REGISTRY} || true'
-    }
-  }
 }
