@@ -1,12 +1,10 @@
 pipeline {
-  agent any   // <— no label required
+  agent { label 'docker' }
 
-  options {
-    skipDefaultCheckout(true)
-  }
+  options { skipDefaultCheckout(true) }
 
   environment {
-    REGISTRY           = 'localhost:5000'        // change if your registry is elsewhere
+    REGISTRY           = 'localhost:5000'        // change if registry is on a different host
     IMAGE_NAME         = 'docker-php-app'
     DOCKER_CREDENTIALS = 'docker-registry'
     GIT_CRED_ID        = 'github-https-pat'
@@ -34,18 +32,14 @@ pipeline {
     }
 
     stage('Test') {
-      steps {
-        sh 'docker run --rm ${REGISTRY}/${IMAGE_NAME}:latest php -v'
-      }
+      steps { sh 'docker run --rm ${REGISTRY}/${IMAGE_NAME}:latest php -v' }
     }
 
     stage('Push') {
       steps {
-        withCredentials([usernamePassword(
-          credentialsId: "${DOCKER_CREDENTIALS}",
-          usernameVariable: 'USER',
-          passwordVariable: 'PASS'
-        )]) {
+        withCredentials([usernamePassword(credentialsId: "${DOCKER_CREDENTIALS}",
+                                          usernameVariable: 'USER',
+                                          passwordVariable: 'PASS')]) {
           sh '''
             echo "${PASS}" | docker login ${REGISTRY} -u "${USER}" --password-stdin
             docker push ${REGISTRY}/${IMAGE_NAME}:latest
@@ -53,22 +47,3 @@ pipeline {
         }
       }
     }
-
-    stage('Deploy') {
-      steps {
-        sh '''
-          docker stop php_app || true
-          docker rm php_app || true
-          docker pull ${REGISTRY}/${IMAGE_NAME}:latest
-          docker run -d --name php_app -p 8080:80 ${REGISTRY}/${IMAGE_NAME}:latest
-        '''
-      }
-    }
-  }
-
-  post {
-    always {
-      sh 'command -v docker >/dev/null 2>&1 && docker system prune -f || true'
-    }
-  }
-}
