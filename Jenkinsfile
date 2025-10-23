@@ -2,9 +2,8 @@ pipeline {
   agent any
 
   options {
-    // Prevent the implicit "Declarative: Checkout SCM" so we don't checkout twice
+    // prevent the implicit "Declarative: Checkout SCM"
     skipDefaultCheckout(true)
-    timestamps()
   }
 
   environment {
@@ -16,7 +15,7 @@ pipeline {
   stages {
     stage('Checkout (SSH)') {
       steps {
-        // Ensure the SSH key is loaded properly into an agent (avoids libcrypto key-load issues)
+        // Load the SSH key properly to avoid the libcrypto error
         sshagent(credentials: ['github-ssh']) {
           git branch: 'main',
               url: 'git@github.com:SadeepPrithiviraj/DockerProject.git'
@@ -65,7 +64,6 @@ pipeline {
 
   post {
     always {
-      // Optional: helps keep the agent clean if you add volumes/containers later
       sh 'docker system prune -f || true'
     }
   }
