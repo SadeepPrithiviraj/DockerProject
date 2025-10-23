@@ -11,9 +11,11 @@ pipeline {
     stages {
         stage('Checkout') {
             steps {
-                git branch: 'main',
+                git(
                     url: 'https://github.com/SadeepPrithiviraj/DockerProject.git',
-                    credentialsId: 'github-token'
+                    branch: 'main',
+                    credentialsId: 'github-credentials'
+                    )
             }
         }
 
