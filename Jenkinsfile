@@ -1,15 +1,15 @@
 pipeline {
-  agent { label 'docker' }  // <-- run on a node that has docker CLI + daemon access
+  agent any   // <— no label required
 
   options {
-    skipDefaultCheckout(true) // avoid the implicit checkout
+    skipDefaultCheckout(true)
   }
 
   environment {
-    REGISTRY           = 'localhost:5000'        // change if your registry is on another host
+    REGISTRY           = 'localhost:5000'        // change if your registry is elsewhere
     IMAGE_NAME         = 'docker-php-app'
-    DOCKER_CREDENTIALS = 'docker-registry'       // Jenkins Username/Password for your registry
-    GIT_CRED_ID        = 'github-https-pat'      // Jenkins Username/Password: username or x-access-token, password = PAT
+    DOCKER_CREDENTIALS = 'docker-registry'
+    GIT_CRED_ID        = 'github-https-pat'
   }
 
   stages {
@@ -68,7 +68,6 @@ pipeline {
 
   post {
     always {
-      // Only prune if docker exists on the node
       sh 'command -v docker >/dev/null 2>&1 && docker system prune -f || true'
     }
   }
