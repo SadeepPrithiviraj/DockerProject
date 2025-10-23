@@ -4,18 +4,16 @@ pipeline {
     environment {
         REGISTRY = 'your.private.registry:5000'
         IMAGE_NAME = 'docker-php-app'
-        GIT_CREDENTIALS = 'github-credentials'
+        GIT_CREDENTIALS = 'github-token'
         DOCKER_CREDENTIALS = 'registry-creds'
     }
 
     stages {
         stage('Checkout') {
             steps {
-                git(
+                git branch: 'main',
                     url: 'https://github.com/SadeepPrithiviraj/DockerProject.git',
-                    branch: 'main',
-                    credentialsId: 'github-credentials'
-                    )
+                    credentialsId: 'github-token'
             }
         }
 
