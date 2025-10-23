@@ -4,7 +4,7 @@ pipeline {
     environment {
         REGISTRY = 'your.private.registry:5000'
         IMAGE_NAME = 'docker-php-app'
-        GIT_CREDENTIALS = 'github-ssh'
+        GIT_CREDENTIALS = 'github-token'
         DOCKER_CREDENTIALS = 'registry-creds'
     }
 
