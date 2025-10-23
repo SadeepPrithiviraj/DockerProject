@@ -10,21 +10,21 @@ pipeline {
     REGISTRY           = 'localhost:5000'
     IMAGE_NAME         = 'docker-php-app'
     DOCKER_CREDENTIALS = 'docker-registry'
+    GIT_CRED_ID        = 'github-https-pat'
   }
 
   stages {
-    stage('Checkout (SSH)') {
+    stage('Checkout (HTTPS)') {
       steps {
-        // Load the SSH key properly to avoid the libcrypto error
-        sshagent(credentials: ['github-ssh']) {
-          git branch: 'main',
-              url: 'git@github.com:SadeepPrithiviraj/DockerProject.git'
-        }
+        git branch: 'main',
+            url: 'https://github.com/SadeepPrithiviraj/DockerProject.git',
+            credentialsId: "${GIT_CRED_ID}"
       }
     }
 
     stage('Build') {
       steps {
+        sh 'docker --version || true'
         sh 'docker build -t ${REGISTRY}/${IMAGE_NAME}:latest .'
       }
     }
@@ -64,7 +64,8 @@ pipeline {
 
   post {
     always {
-      sh 'docker system prune -f || true'
+      // Only prune if docker exists on the agent
+      sh 'command -v docker >/dev/null 2>&1 && docker system prune -f || true'
     }
   }
 }
